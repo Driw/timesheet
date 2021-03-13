@@ -1,5 +1,6 @@
 package br.com.driw.timesheet.config;
 
+import br.com.driw.timesheet.Constants;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
@@ -13,7 +14,7 @@ public class RestMcvConfig {
 		return new RepositoryRestConfigurer() {
 			@Override
 			public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config) {
-				config.setBasePath("/api");
+				config.setBasePath(Constants.API_PATH);
 			}
 		};
 	}

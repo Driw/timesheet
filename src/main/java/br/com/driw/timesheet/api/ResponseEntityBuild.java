@@ -6,34 +6,28 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
-import java.util.function.Function;
+import java.util.function.ToLongFunction;
 
 public class ResponseEntityBuild {
 
 	private ResponseEntityBuild() {
 	}
 
-	public static <T extends Serializable> ResponseEntity<Void> buildCreated(T object, Function<T, Long> idConsumer) {
+	public static <T extends Serializable> ResponseEntity<Void> buildCreated(T object, ToLongFunction<T> idConsumer) {
 		URI uri = generateCreatedUriLocation(object, idConsumer);
 
 		return ResponseEntity.created(uri).build();
 	}
 
-	private static <T extends Serializable> URI generateCreatedUriLocation(T object, Function<T, Long> idConsumer) {
+	private static <T extends Serializable> URI generateCreatedUriLocation(T object, ToLongFunction<T> idConsumer) {
 		return ServletUriComponentsBuilder.fromCurrentRequest()
 			.path("/{id}")
-			.buildAndExpand(map("id", idConsumer.apply(object)))
+			.buildAndExpand(map("id", idConsumer.applyAsLong(object)))
 			.toUri();
 	}
 
-	public static <T extends Serializable> ResponseEntity<ApiResponse<T>> buildGet(Optional<T> optional) {
-		return optional.map(ResponseEntityBuild::getSuccessfully)
-			.orElse(ResponseEntity.notFound().build());
-	}
-
-	private static <T extends Serializable> ResponseEntity<ApiResponse<T>> getSuccessfully(T value) {
+	public static <T extends Serializable> ResponseEntity<ApiResponse<T>> buildGet(T value) {
 		return ResponseEntity.ok(generateApiResponse(value));
 	}
 

@@ -29,6 +29,8 @@ import springfox.documentation.swagger.web.UiConfiguration;
 import springfox.documentation.swagger.web.UiConfigurationBuilder;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Configuration
@@ -46,6 +48,8 @@ public class SwaggerConfig {
 			.build()
 			.pathMapping("/")
 			.directModelSubstitute(LocalDate.class, String.class)
+			.directModelSubstitute(LocalDateTime.class, String.class)
+			.directModelSubstitute(LocalTime.class, String.class)
 			.genericModelSubstitutes(ResponseEntity.class)
 			.alternateTypeRules(
 				newRule(typeResolver.resolve(DeferredResult.class,
