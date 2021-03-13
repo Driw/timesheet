@@ -29,13 +29,36 @@ public class DailyTimeReportController {
 		this.dailyTimeReportService = dailyTimeReportService;
 	}
 
-	@GetMapping("/balance/{from}/{at}")
+	@GetMapping("/balance/day/{day}")
+	@ApiOperation("Calculate balance time of a day")
+	public ResponseEntity<ApiResponse<DailyTimeReportResponseDTO>> balanceDay(
+		@PathVariable("day") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate day
+	) {
+		DailyTimeReportResponseDTO response = this.dailyTimeReportService.balance(day, day);
+
+		return ResponseEntityBuild.buildGet(response);
+	}
+
+	@GetMapping("/balance/period/{from}/{at}")
 	@ApiOperation("Calculate balance time from period")
-	public ResponseEntity<ApiResponse<DailyTimeReportResponse>> balance(
+	public ResponseEntity<ApiResponse<DailyTimeReportResponseDTO>> balancePeriod(
 		@PathVariable("from") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
 		@PathVariable("at") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate at
 	) {
-		DailyTimeReportResponse response = this.dailyTimeReportService.balance(from, at);
+		DailyTimeReportResponseDTO response = this.dailyTimeReportService.balance(from, at);
+
+		return ResponseEntityBuild.buildGet(response);
+	}
+
+	@GetMapping("/balance/month/{year}/{month}")
+	@ApiOperation("Calculate balance time from period")
+	public ResponseEntity<ApiResponse<DailyTimeReportResponseDTO>> balancePeriod(
+		@PathVariable("year") int year,
+		@PathVariable("month") int month
+	) {
+		LocalDate from = LocalDate.of(year, month, 16);
+		LocalDate at = from.plusMonths(1).minusDays(1);
+		DailyTimeReportResponseDTO response = this.dailyTimeReportService.balance(from, at);
 
 		return ResponseEntityBuild.buildGet(response);
 	}

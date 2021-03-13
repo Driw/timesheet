@@ -10,17 +10,17 @@ import java.time.LocalTime;
 
 @Data
 @Accessors(chain = true)
-public class DailyTimeBalance {
+public class DailyTimeBalanceDTO {
 
 	public static final LocalTime NO_TIME = LocalTime.of(0, 0, 0);
 
 	private DailyTime dailyTime;
 
 	@JsonFormat(pattern = Constants.JSON_TIME_FORMAT, locale = Constants.JSON_LOCALE)
-	private LocalTime normal;
+	private LocalTime normalTime;
 
 	@JsonFormat(pattern = Constants.JSON_TIME_FORMAT, locale = Constants.JSON_LOCALE)
-	private LocalTime nightShift;
+	private LocalTime nightShiftTime;
 
 	@JsonFormat(pattern = Constants.JSON_TIME_FORMAT, locale = Constants.JSON_LOCALE)
 	private LocalTime holidayTime;
@@ -29,10 +29,10 @@ public class DailyTimeBalance {
 	private LocalTime dueTime;
 	private Boolean accredit;
 
-	public DailyTimeBalance(DailyTime dailyTime) {
+	public DailyTimeBalanceDTO(DailyTime dailyTime) {
 		this.setDailyTime(dailyTime)
-			.setNormal(NO_TIME)
-			.setNightShift(NO_TIME)
+			.setNormalTime(NO_TIME)
+			.setNightShiftTime(NO_TIME)
 			.setHolidayTime(NO_TIME)
 			.setDueTime(NO_TIME)
 			.setAccredit(false);

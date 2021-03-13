@@ -2,6 +2,9 @@ package br.com.driw.timesheet;
 
 public class Constants {
 
+	public static final long SECONDS_TO_MILLISECONDS = 1000;
+	public static final long MINUTE_TO_SECONDS = 60;
+
 	public static final long NO_ID = 0L;
 	public static final int MAX_PAGE_LENGTH = 2000;
 

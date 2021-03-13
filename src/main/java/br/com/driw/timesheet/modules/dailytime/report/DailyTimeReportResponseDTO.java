@@ -8,6 +8,7 @@ import java.util.List;
 
 @Data
 @Accessors(chain = true)
-public class DailyTimeReportResponse implements Serializable {
-	private List<DailyTimeBalance> balances;
+public class DailyTimeReportResponseDTO implements Serializable {
+	private DailyTimeBalanceDescribedDTO balance;
+	private List<DailyTimeDayDescribedDTO> balances;
 }
