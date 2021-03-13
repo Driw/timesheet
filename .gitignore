@@ -1,0 +1,8 @@
+# Build
+/target
+
+# IntelliJ
+/.idea/
+
+# Scripts
+maven-*.bat

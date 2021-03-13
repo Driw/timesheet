@@ -1,0 +1,32 @@
+
+spring:
+  application:
+    name: timesheet
+  datasource:
+    url: jdbc:mysql://localhost:60001/timesheet?useLegacyDatetimeCode=false&serverTimezone=America/Sao_Paulo
+    password: timesheet
+    username: timesheet
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+    show-sql: true
+  messages:
+    basename: locale/messages
+    encoding: windows-1252
+  security:
+    user:
+      name: timesheet
+      password: timesheet
+      roles: manager
+  hbm2ddl:
+    auto: validate
+
+logging:
+  level:
+    br:
+      com:
+        driw:
+          bridge: DEBUG
+          modules: DEBUG
