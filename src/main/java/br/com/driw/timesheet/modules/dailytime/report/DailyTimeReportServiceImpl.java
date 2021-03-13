@@ -17,8 +17,10 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -57,22 +59,17 @@ public class DailyTimeReportServiceImpl implements DailyTimeReportService {
 		Pageable pageable = PageRequest.of(0, 1);
 		Page<DailyTime> firstPage = this.dailyTimeRepository.findByDayBetween(from, at, pageable);
 		List<DailyTime> dailyTimes = RepositoryUtils.findAllContentPages(firstPage, this.balanceFindPage(from, at));
-		List<DailyTimeBalanceDTO> dailyTimeBalances = dailyTimes.stream()
-			.map(dailyTime -> this.balanceByType.get(dailyTime.getType()).apply(dailyTime))
-			.collect(Collectors.toList());
-
-		List<DailyTimeDayReportDTO> balances = dailyTimeBalances.stream()
-			.map(this::dailyTimeBalanceToReport)
-			.collect(Collectors.toList());
-		List<DailyTimeDayDescribedDTO> balancesDescribed = balances.stream()
-			.map(DailyTimeDayDescribedDTO::new)
-			.collect(Collectors.toList());
-
-		DailyTimeBalanceReportDTO balanceReport = this.balanceReport(balances);
+		List<DailyTimeBalanceDTO> dailyTimeBalances = this.buildBalances(dailyTimes);
+		List<DailyTimeDayReportDTO> balances = this.buildDayReports(dailyTimeBalances);
+		List<DailyTimeDayDescribedDTO> balancesDescribed = this.buildDayDescribedReports(balances);
+		DailyTimeBalanceReportDTO balanceReport = this.buildBalanceReports(balances);
 		DailyTimeBalanceDescribedDTO balanceDescribed = new DailyTimeBalanceDescribedDTO(balanceReport);
+		Map<LocalDate, String> resumeUnsorted = this.buildResume(balancesDescribed);
+		Map<LocalDate, String> resumeSorted = new TreeMap<>(resumeUnsorted);
 
 		return new DailyTimeReportResponseDTO()
 			.setBalance(balanceDescribed)
+			.setResume(resumeSorted)
 			.setBalances(balancesDescribed);
 	}
 
@@ -80,18 +77,22 @@ public class DailyTimeReportServiceImpl implements DailyTimeReportService {
 		return page -> this.dailyTimeRepository.findByDayBetween(from, at, PageRequest.of(page, Constants.MAX_PAGE_LENGTH));
 	}
 
-	private DailyTimeBalanceReportDTO balanceReport(List<DailyTimeDayReportDTO> balances) {
-		Duration workTime = this.sumLocalTime(balances, DailyTimeDayReportDTO::getWorkTime);
-		Duration nightShiftTime = this.sumLocalTime(balances, DailyTimeDayReportDTO::getNightShiftTime);
-		Duration additionalNightShift = this.sumLocalTime(balances, DailyTimeDayReportDTO::getAdditionalNightShiftTime);
-		Duration holidayTime = this.sumLocalTime(balances, DailyTimeDayReportDTO::getHolidayTime);
-		Duration additionalHolidayTime = this.sumLocalTime(balances, DailyTimeDayReportDTO::getAdditionalHolidayTime);
-		Duration dueTime = this.sumLocalTime(balances, DailyTimeDayReportDTO::getDueTime);
-
-		List<DailyTimeDayReportDTO> availableBalances = balances.stream()
-			.filter(DailyTimeDayReportUtils::canBalance)
+	private List<DailyTimeBalanceDTO> buildBalances(List<DailyTime> dailyTimes) {
+		return dailyTimes.stream()
+			.map(dailyTime -> this.balanceByType.get(dailyTime.getType()).apply(dailyTime))
 			.collect(Collectors.toList());
-		Duration balanceTime = this.sumLocalTime(availableBalances, DailyTimeDayReportDTO::getBalanceTime);
+	}
+
+	private DailyTimeBalanceReportDTO buildBalanceReports(List<DailyTimeDayReportDTO> balances) {
+		Duration workTime = this.sumDurations(balances, DailyTimeDayReportDTO::getWorkTime);
+		Duration nightShiftTime = this.sumDurations(balances, DailyTimeDayReportDTO::getNightShiftTime);
+		Duration additionalNightShift = this.sumDurations(balances, DailyTimeDayReportDTO::getAdditionalNightShiftTime);
+		Duration holidayTime = this.sumDurations(balances, DailyTimeDayReportDTO::getHolidayTime);
+		Duration additionalHolidayTime = this.sumDurations(balances, DailyTimeDayReportDTO::getAdditionalHolidayTime);
+		Duration dueTime = this.sumDurations(balances, DailyTimeDayReportDTO::getDueTime);
+
+		List<DailyTimeDayReportDTO> availableBalances = this.filterAvailableBalances(balances);
+		Duration balanceTime = this.sumDurations(availableBalances, DailyTimeDayReportDTO::getBalanceTime);
 
 		return new DailyTimeBalanceReportDTO()
 			.setWorkTime(workTime)
@@ -103,35 +104,19 @@ public class DailyTimeReportServiceImpl implements DailyTimeReportService {
 			.setBalanceTime(balanceTime);
 	}
 
-	private Duration applyNightShiftBonus(Duration nightShift) {
-		return this.applyBonus(nightShift, NIGHT_SHIFT_BONUS);
-	}
-
-	private Duration applyHolidayBonus(Duration normalTime) {
-		return this.applyBonus(normalTime, HOLIDAY_BONUS);
-	}
-
-	private Duration applyBonus(Duration nightShift, float bonusRate) {
-		long seconds = nightShift.getSeconds();
-		long bonus = (long) Math.floor(seconds * bonusRate);
-		bonus -= bonus % Constants.MINUTE_TO_SECONDS;
-
-		return Duration.ofSeconds(bonus);
-	}
-
-	private Duration sumLocalTime(List<DailyTimeDayReportDTO> balances, Function<DailyTimeDayReportDTO, Duration> getLocalTime) {
+	private List<DailyTimeDayReportDTO> filterAvailableBalances(List<DailyTimeDayReportDTO> balances) {
 		return balances.stream()
-			.map(getLocalTime)
-			.reduce(DurationUtils.zero(), Duration::plus);
+			.filter(DailyTimeDayReportUtils::canBalance)
+			.collect(Collectors.toList());
 	}
 
-	private boolean hasLunchTime(DailyTimeBalanceDTO dailyTimeBalance) {
-		LocalTime normalTime = dailyTimeBalance.getNormalTime();
-
-		return normalTime.getHour() >= 6;
+	private List<DailyTimeDayReportDTO> buildDayReports(List<DailyTimeBalanceDTO> dailyTimeBalances) {
+		return dailyTimeBalances.stream()
+			.map(this::dayReport)
+			.collect(Collectors.toList());
 	}
 
-	private DailyTimeDayReportDTO dailyTimeBalanceToReport(DailyTimeBalanceDTO dailyTimeBalance) {
+	private DailyTimeDayReportDTO dayReport(DailyTimeBalanceDTO dailyTimeBalance) {
 		boolean lunch = this.hasLunchTime(dailyTimeBalance);
 		Duration work = DurationUtils.from(dailyTimeBalance.getNormalTime())
 			.minus(lunch ? LUNCH_TIME : DurationUtils.zero());
@@ -159,5 +144,47 @@ public class DailyTimeReportServiceImpl implements DailyTimeReportService {
 			.setAdditionalHolidayTime(additionalHoliday)
 			.setDueTime(due)
 			.setBalanceTime(balance);
+	}
+
+	private List<DailyTimeDayDescribedDTO> buildDayDescribedReports(List<DailyTimeDayReportDTO> balances) {
+		return balances.stream()
+			.map(DailyTimeDayDescribedDTO::new)
+			.collect(Collectors.toList());
+	}
+
+	private Map<LocalDate, String> buildResume(List<DailyTimeDayDescribedDTO> balancesDescribed) {
+		return balancesDescribed.stream()
+			.collect(Collectors.toMap(
+				dailyTimeDayDescribed -> dailyTimeDayDescribed.getDailyTime().getDay(),
+				dailyTimeDayDescribed -> Optional.ofNullable(dailyTimeDayDescribed.getBalanceTime()).orElse("-")
+			));
+	}
+
+	private Duration applyNightShiftBonus(Duration nightShift) {
+		return this.applyBonus(nightShift, NIGHT_SHIFT_BONUS);
+	}
+
+	private Duration applyHolidayBonus(Duration normalTime) {
+		return this.applyBonus(normalTime, HOLIDAY_BONUS);
+	}
+
+	private Duration applyBonus(Duration nightShift, float bonusRate) {
+		long seconds = nightShift.getSeconds();
+		long bonus = (long) Math.floor(seconds * bonusRate);
+		bonus -= bonus % Constants.MINUTE_TO_SECONDS;
+
+		return Duration.ofSeconds(bonus);
+	}
+
+	private Duration sumDurations(List<DailyTimeDayReportDTO> balances, Function<DailyTimeDayReportDTO, Duration> getLocalTime) {
+		return balances.stream()
+			.map(getLocalTime)
+			.reduce(DurationUtils.zero(), Duration::plus);
+	}
+
+	private boolean hasLunchTime(DailyTimeBalanceDTO dailyTimeBalance) {
+		LocalTime normalTime = dailyTimeBalance.getNormalTime();
+
+		return normalTime.getHour() >= 6;
 	}
 }
