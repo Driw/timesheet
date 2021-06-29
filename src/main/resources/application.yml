@@ -12,6 +12,8 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
     show-sql: true
+    hibernate:
+      ddl-auto: update
   messages:
     basename: locale/messages
     encoding: windows-1252
@@ -20,13 +22,10 @@ spring:
       name: timesheet
       password: timesheet
       roles: manager
-  hbm2ddl:
-    auto: validate
+
+hibernate:
 
 logging:
   level:
-    br:
-      com:
-        driw:
-          bridge: DEBUG
-          modules: DEBUG
+    br.com.driw.timesheet.modules: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
