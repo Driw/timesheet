@@ -3,6 +3,3 @@
 
 # IntelliJ
 /.idea/
-
-# Scripts
-maven-*.bat
