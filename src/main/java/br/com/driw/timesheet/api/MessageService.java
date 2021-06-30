@@ -5,23 +5,24 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.Objects;
 
 @Service
 public class MessageService {
 
-	private final MessageSource messageSource; // Talvez
+	private final MessageSource messageSource;
 
 	public MessageService(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
 	public String get(String message, Object... args) {
-		return this.messageSource.getMessage(message, args, LocaleContextHolder.getLocale());
+		return this.messageSource.getMessage(message, args, locale());
 	}
 
 	public String get(Enum<?> enumConstant, Object... args) {
-		return this.messageSource.getMessage(this.parseMessage(enumConstant), args, LocaleContextHolder.getLocale());
+		return this.messageSource.getMessage(this.parseMessage(enumConstant), args, locale());
 	}
 
 	private String parseMessage(Enum<?> enumConstant) {
@@ -36,4 +37,7 @@ public class MessageService {
 		return String.format("%s.%s", enumConstant.getClass().getSimpleName(), enumConstant.toString());
 	}
 
+	public static Locale locale() {
+		return LocaleContextHolder.getLocale();
+	}
 }

@@ -15,5 +15,4 @@ public class ApiResponse<T> {
 	private long timestamp;
 	private String message;
 	private T result;
-
 }

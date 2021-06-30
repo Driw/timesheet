@@ -1,23 +1,27 @@
 package br.com.driw.timesheet.api;
 
+import br.com.driw.timesheet.builder.ApiResponseCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.ToLongFunction;
 
 public class ResponseEntityBuild {
 
-	private ResponseEntityBuild() {
-	}
+	public static final String REQUEST_COMPLETED_SUCCESSFULLY = "Request completed successfully";
+
+	private ResponseEntityBuild() { }
 
 	public static <T extends Serializable> ResponseEntity<Void> buildCreated(T object, ToLongFunction<T> idConsumer) {
 		URI uri = generateCreatedUriLocation(object, idConsumer);
 
-		return ResponseEntity.created(uri).build();
+		return ResponseEntity.created(uri)
+				.build();
 	}
 
 	private static <T extends Serializable> URI generateCreatedUriLocation(T object, ToLongFunction<T> idConsumer) {
@@ -28,14 +32,17 @@ public class ResponseEntityBuild {
 	}
 
 	public static <T extends Serializable> ResponseEntity<ApiResponse<T>> buildGet(T value) {
+		if (Objects.isNull(value))
+			return ResponseEntity.notFound().build();
+
 		return ResponseEntity.ok(generateApiResponse(value));
 	}
 
 	private static <T extends Serializable> ApiResponse<T> generateApiResponse(T value) {
 		return new ApiResponse<T>()
-			.setCode(1)
+			.setCode(ApiResponseCode.SUCCESSFULLY)
 			.setTimestamp(System.currentTimeMillis())
-			.setMessage("Request completed successfully") // TODO message source?
+			.setMessage(REQUEST_COMPLETED_SUCCESSFULLY) // TODO message source?
 			.setResult(value);
 	}
 

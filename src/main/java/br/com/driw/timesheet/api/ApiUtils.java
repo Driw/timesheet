@@ -4,8 +4,7 @@ import org.springframework.http.HttpStatus;
 
 public class ApiUtils {
 
-	private ApiUtils() {
-	}
+	private ApiUtils() { }
 
 	public static HttpStatus parseHttpStatus(Object object) {
 		if (!(object instanceof ImHttpStatus)) {
