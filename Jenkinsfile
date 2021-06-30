@@ -5,7 +5,7 @@ pipeline {
 		PROJECT_DIR_PATH = "${env.WORKSPACE}"
 		GIT_URL = 'https://github.com/Driw/timesheet.git'
 		GIT_BRANCH = 'feature/jenkins-pipeline'
-		SONAR_QUBE_ENV = 'sonar'
+		SONAR_QUBE_ENV = 'sonar-auth'
 		NEXUS_VERSION = 'nexus3'
 		NEXUS_PROTOCOL = 'http'
 		NEXUS_URL = 'kubernetes.docker.internal:60003'
@@ -41,7 +41,7 @@ pipeline {
 			post {
 				always {
 					script {
-						junit "${module}/target/surefire-reports/*.xml"
+						junit "target/surefire-reports/*.xml"
 					}
 				}
 			}
